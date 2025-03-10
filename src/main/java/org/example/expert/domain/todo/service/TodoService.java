@@ -12,13 +12,12 @@ import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -51,16 +50,10 @@ public class TodoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TodoResponse> getTodos(int page, int size, String weather) {
+    public Page<TodoResponse> getTodos(int page, int size, String weather, LocalDate from, LocalDate to) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<Todo> todos = new PageImpl<>(List.of());
-        if(weather == null || weather.isEmpty()) {
-            todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
-        }
-        if(weather != null) {
-            todos = todoRepository.findAllByWeatherOrderByModifiedAtDesc(weather, pageable);
-        }
+        Page<Todo> todos = todoRepository.findAllByWeatherAndDateOrderByModifiedAtDesc(weather,from,to,pageable);
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
