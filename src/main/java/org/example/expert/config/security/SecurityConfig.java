@@ -1,6 +1,7 @@
 package org.example.expert.config.security;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.expert.config.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
@@ -33,7 +35,7 @@ public class SecurityConfig {
             //인가 설정
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers("/auth/**").permitAll()//회원가입과 로그인은 모두 허용
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/admin/**").hasAuthority("ADMIN")
                     .anyRequest().authenticated()//나머지는 인증된 사용자만
             )
             //세션은 사용하지않도록 설정
