@@ -1,16 +1,22 @@
 package org.example.expert.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.example.expert.config.security.CustomUser;
 import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.common.annotation.Auth;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.user.enums.UserRole;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+
+import java.util.Optional;
 
 public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
 
@@ -34,13 +40,14 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
             NativeWebRequest webRequest,
             @Nullable WebDataBinderFactory binderFactory
     ) {
-        HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
+        SecurityContext context = SecurityContextHolder.getContext();
+        Authentication authentication = context.getAuthentication();
 
-        // JwtFilter 에서 set 한 userId, email, userRole 값을 가져옴
-        Long userId = (Long) request.getAttribute("userId");
-        String email = (String) request.getAttribute("email");
-        UserRole userRole = UserRole.of((String) request.getAttribute("userRole"));
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new AuthException("");
+        }
+        CustomUser userDetails = (CustomUser) authentication.getPrincipal();
 
-        return new AuthUser(userId, email, userRole);
+        return new AuthUser(userDetails.getUserId(), userDetails.getEmail(), userDetails.getUserRole());
     }
 }
