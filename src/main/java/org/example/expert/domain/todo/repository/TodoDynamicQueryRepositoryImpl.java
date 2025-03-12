@@ -4,6 +4,7 @@ import static org.example.expert.domain.todo.entity.QTodo.todo;
 import static org.example.expert.domain.manager.entity.QManager.manager;
 import static org.example.expert.domain.comment.entity.QComment.comment;
 
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Wildcard;
@@ -34,7 +35,7 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
                 .leftJoin(todo.user).fetchJoin()
                 .where(
                         weatherEq(weather)
-                        , dateBetween(from, to)
+                        , modifiedAtBetween(from, to)
                 ).orderBy(todo.modifiedAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -44,7 +45,7 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
                 .from(todo)
                 .where(
                         weatherEq(weather)
-                        , dateBetween(from, to)
+                        , modifiedAtBetween(from, to)
                 ).fetchOne();
 
         return new PageImpl<>(todos, pageable, count == null ? 0 : count);
@@ -55,7 +56,7 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
         //검색조건에 맞는 일정 Id
         List<Long> todoIds = queryFactory.select(todo.id)
                 .from(todo)
-                .where(titleContains(title), dateBetween(from, to))
+                .where(titleContains(title), createdAtBetween(from, to))
                 .orderBy(todo.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -84,29 +85,41 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
         Long total = queryFactory
                 .select(todo.count())
                 .from(todo)
-                .where(titleContains(title), dateBetween(from, to))
+                .where(titleContains(title), createdAtBetween(from, to))
                 .fetchOne();
 
         return new PageImpl<>(todos, pageable, total == null ? 0 : total);
     }
 
     private BooleanExpression weatherEq(String weather) {
-        return weather == null || weather.isEmpty() ? null : todo.weather.eq(weather);
+        return weather == null || weather.isEmpty() ? Expressions.TRUE : todo.weather.eq(weather);
     }
 
     private BooleanExpression titleContains(String title) {
-        return title == null || title.isEmpty() ? null : todo.title.contains(title);
+        return title == null || title.isEmpty() ? Expressions.TRUE : todo.title.contains(title);
     }
 
-    private BooleanExpression dateBetween(LocalDate from, LocalDate to) {
+    private BooleanExpression modifiedAtBetween(LocalDate from, LocalDate to) {
         if (from == null && to == null) {
-            return null;
+            return Expressions.TRUE;
         }
 
         LocalDate f = from == null ? LocalDate.of(1970,1,1) : from;
         LocalDate e = to == null ? LocalDate.now() : to;
 
         return todo.modifiedAt.between(LocalDateTime.of(f, LocalTime.MIDNIGHT)
+                , LocalDateTime.of(e, LocalTime.MAX));
+    }
+
+    private BooleanExpression createdAtBetween(LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return Expressions.TRUE;
+        }
+
+        LocalDate f = from == null ? LocalDate.of(1970,1,1) : from;
+        LocalDate e = to == null ? LocalDate.now() : to;
+
+        return todo.createdAt.between(LocalDateTime.of(f, LocalTime.MIDNIGHT)
                 , LocalDateTime.of(e, LocalTime.MAX));
     }
 }
