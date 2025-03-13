@@ -41,7 +41,7 @@ public class SecurityConfig {
             .addFilterBefore(jwtFilter, SecurityContextHolderAwareRequestFilter.class)//명시적으로 순서 지정
             //인가 설정
             .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers("/auth/**").permitAll()//회원가입과 로그인은 모두 허용
+                    .requestMatchers("/auth/**", "/health").permitAll()//회원가입과 로그인은 모두 허용
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated()//나머지는 인증된 사용자만, 세부 인가처리는 @Secured 로 처리
             )
