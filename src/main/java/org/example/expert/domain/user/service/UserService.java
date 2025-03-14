@@ -9,6 +9,8 @@ import org.example.expert.domain.user.dto.response.ImageResponse;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,6 +55,10 @@ public class UserService {
 
     public void deleteUserProfileImage(AuthUser authUser) {
         userImageService.delete(authUser);
+    }
+
+    public Slice<UserResponse> searchUsersByNickName(String name, Pageable pageable) {
+        return userRepository.findUsersByNickName(name, pageable);
     }
 
     private static void validateNewPassword(UserChangePasswordRequest userChangePasswordRequest) {

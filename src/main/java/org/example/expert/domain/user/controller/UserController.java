@@ -6,10 +6,14 @@ import org.example.expert.domain.user.dto.request.UserChangePasswordRequest;
 import org.example.expert.domain.user.dto.response.ImageResponse;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.service.UserService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -41,4 +45,13 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/users/search")
+    public ResponseEntity<Slice<UserResponse>> searchUsersByNickName(@RequestParam(required = false) String name,
+                                                                     @PageableDefault Pageable pageable) {
+        Slice<UserResponse> users = userService.searchUsersByNickName(name, pageable);
+
+        return ResponseEntity.ok(users);
+    }
+
 }
