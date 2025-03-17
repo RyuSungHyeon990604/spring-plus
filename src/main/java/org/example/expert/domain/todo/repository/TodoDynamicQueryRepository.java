@@ -10,4 +10,5 @@ import java.time.LocalDate;
 public interface TodoDynamicQueryRepository {
     Page<Todo> findAllByWeatherAndDateOrderByModifiedAtDesc(String weather, LocalDate from, LocalDate to, Pageable pageable);
     Page<TodoSearchResponse> search(String title, LocalDate from, LocalDate to, Pageable pageable);
+    Page<TodoSearchResponse> searchVer2(String title, LocalDate from, LocalDate to, Pageable pageable);
 }

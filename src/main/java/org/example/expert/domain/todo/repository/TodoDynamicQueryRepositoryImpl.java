@@ -52,16 +52,39 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
     }
 
     @Override
-    public Page<TodoSearchResponse> search(String title, LocalDate from, LocalDate to, Pageable pageable) {
-        //검색조건에 맞는 일정 Id
-        List<Long> todoIds = queryFactory.select(todo.id)
+    public Page<TodoSearchResponse> searchVer2(String title, LocalDate from, LocalDate to, Pageable pageable) {
+        List<TodoSearchResponse> todos = queryFactory.select(Projections.constructor(TodoSearchResponse.class
+                        , Projections.constructor(TodoResponse.class
+                                , todo.id
+                                , todo.title
+                                , todo.contents
+                                , todo.weather
+                                , Projections.constructor(UserResponse.class, todo.user.id, todo.user.email)
+                                , todo.createdAt
+                                , todo.modifiedAt
+                                )
+                                , queryFactory.select(Wildcard.count).from(manager).where(manager.todo.eq(todo))
+                                , queryFactory.select(Wildcard.count).from(comment).where(comment.todo.eq(todo)))
+                        )
                 .from(todo)
+                .join(todo.user)
                 .where(titleContains(title), createdAtBetween(from, to))
                 .orderBy(todo.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
+        Long total = queryFactory
+                .select(todo.count())
+                .from(todo)
+                .where(titleContains(title), createdAtBetween(from, to))
+                .fetchOne();
+
+        return new PageImpl<>(todos, pageable, total == null ? 0 : total);
+    }
+
+    @Override
+    public Page<TodoSearchResponse> search(String title, LocalDate from, LocalDate to, Pageable pageable) {
         List<TodoSearchResponse> todos = queryFactory.select(Projections.constructor(TodoSearchResponse.class
                         , Projections.constructor(TodoResponse.class
                                 , todo.id
@@ -71,15 +94,17 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
                                 , Projections.constructor(UserResponse.class, todo.user.id, todo.user.email)
                                 , todo.createdAt
                                 , todo.modifiedAt)
-                        , manager.count()
-                        , comment.count()))
+                        , manager.countDistinct()
+                        , comment.countDistinct()))
                 .from(todo)
-                .leftJoin(todo.user)
+                .join(todo.user)
                 .leftJoin(manager).on(manager.todo.id.eq(todo.id))
                 .leftJoin(comment).on(comment.todo.id.eq(todo.id))
-                .where(todo.id.in(todoIds))
+                .where(titleContains(title), createdAtBetween(from, to))
                 .groupBy(todo.id,todo.title, todo.contents, todo.weather, todo.user.id, todo.user.email, todo.createdAt, todo.modifiedAt)
                 .orderBy(todo.createdAt.desc())
+                .limit(pageable.getPageSize())
+                .offset(pageable.getOffset())
                 .fetch();
 
         Long total = queryFactory
