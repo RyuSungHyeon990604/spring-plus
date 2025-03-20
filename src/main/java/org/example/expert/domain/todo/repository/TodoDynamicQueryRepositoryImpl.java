@@ -8,6 +8,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Wildcard;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
@@ -17,11 +18,13 @@ import org.example.expert.domain.user.dto.response.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepository {
@@ -81,6 +84,15 @@ public class TodoDynamicQueryRepositoryImpl implements TodoDynamicQueryRepositor
                 .fetchOne();
 
         return new PageImpl<>(todos, pageable, total == null ? 0 : total);
+    }
+
+    @Override
+    public Optional<Todo> findByIdWithUser(Long todoId) {
+        return Optional.ofNullable(queryFactory.select(todo)
+                .from(todo)
+                .leftJoin(todo.user).fetchJoin()
+                .where(todo.id.eq(todoId))
+                .fetchOne());
     }
 
     @Override
